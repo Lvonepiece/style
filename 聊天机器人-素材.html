@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+  <script src="https://cdn.bootcss.com/jquery.nicescroll/3.7.6/jquery.nicescroll.min.js"></script>
+  <title>聊天机器人</title>
+</head>
+
+<body>
+  <div class="wrap">
+    <!-- 头部 Header 区域 -->
+    <div class="header">
+      <h3>小思同学</h3>
+      <img src="img/person01.png" alt="icon" />
+    </div>
+    <!-- 中间 聊天内容区域 -->
+    <div class="main">
+      <ul class="talk_list" style="top: 0px;" id="talk_list">
+        <li class="left_word">
+          <img src="img/person01.png" /> <span>你好</span>
+        </li>
+        <li class="right_word">
+          <img src="img/person02.png" /> <span>你好哦</span>
+        </li>
+        <!-- <li class="left_word">
+            <img src="img/person01.png" /> <span>你好</span>
+          </li>
+          <li class="right_word">
+            <img src="img/person02.png" /> <span>你好哦</span>
+          </li>
+          <li class="left_word">
+            <img src="img/person01.png" /> <span>你好</span>
+          </li>
+          <li class="right_word">
+            <img src="img/person02.png" /> <span>你好哦</span>
+          </li>
+          <li class="left_word">
+            <img src="img/person01.png" /> <span>你好</span>
+          </li>
+          <li class="right_word">
+            <img src="img/person02.png" /> <span>你好哦</span>
+          </li>
+          <li class="left_word">
+            <img src="img/person01.png" /> <span>你好</span>
+          </li>
+          <li class="right_word">
+            <img src="img/person02.png" /> <span>你好哦</span>
+          </li>
+          <li class="left_word">
+            <img src="img/person01.png" /> <span>你好</span>
+          </li>
+          <li class="right_word">
+            <img src="img/person02.png" /> <span>你好哦</span>
+          </li> -->
+      </ul>
+      <div class="drag_bar" style="display: none;">
+        <div class="drager ui-draggable ui-draggable-handle" style="display: none; height: 412.628px;"></div>
+      </div>
+    </div>
+    <!-- 底部 消息编辑区域 -->
+    <div class="footer">
+      <img src="img/person02.png" alt="icon" />
+      <input type="text" placeholder="说的什么吧..." class="input_txt" id="word" />
+      <input type="button" value="发 送" class="input_sub" id="btn" />
+    </div>
+  </div>
+</body>
+<script>
+  $(function () {
+    // 初始化niceScroll
+    $(".main").niceScroll();
+    // 让滚动条到最底部
+    function resetScroll() {
+      $(".main").getNiceScroll(0).resize().doScrollTop($("#talk_list").height(), 200);
+
+    }
+    function speak(text) {
+      var msg = new window.SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(msg);
+    }
+    // 我说话
+    // 1.收集说话内容，简单判断。
+    // 2.把说话的内容组装成一个dom结构，添加到页面上
+    // 3.把说话内容发给机器人，其实就是调用接口，并把内容传过去
+    // 4.把机器的回复组装成一个dom结构，添加到页面上
+    $('#btn').click(function () {
+      // 1.收集说话内容。简单判断。
+      var word = $('#word').val().trim()
+      if (word.length === 0) {
+
+        return;
+      }
+      $('#word').val('')
+      // 2.把说话的内容组装成一个dom结构，添加到页面上
+      var liStr = `
+          <li class="right_word">
+          <img src="img/person02.png" /> <span>${word}</span>
+          </li>`
+      $('#talk_list').append(liStr)
+      resetScroll()
+      // 3.把说话内容发给机器人，其实就是调用接口，并把内容传过去
+
+      $.ajax({
+        url: 'http://ajax.frontend.itheima.net:3006/api/robot',
+        type: 'get',
+        data: {
+          'spoken': word
+        },
+        success: function (res) {
+          // 4.把机器的回复组装成一个dom结构，添加到页面上
+          console.log(res);
+          if (res.data.type === 5000) {
+            // 机器的回复
+            var replay = res.data.info.text
+            // 添加到页面上
+            var liStr = `
+                <li class="left_word">
+                <img src="img/person01.png"/> <span>${replay}</span>
+                </li>`
+            $('#talk_list').append(liStr)
+            resetScroll()
+            speak(replay)
+          }
+          else {
+            var liStr = `
+                <li class="left_word">
+                <img src="img/person01.png"/> <span>机器人短路了</span>
+                </li>`
+            $('#talk_list').append(liStr)
+            resetScroll()
+          }
+
+        }
+      })
+    })
+    // 回车说话
+    // 监听keyup事件，如果当前是回车键，调用click
+    $('#word').keyup(function (e) {
+      if (e.keyCode === 13) {
+        $('#btn').click()
+      }
+    })
+  })
+
+</script>
+
+</html>
